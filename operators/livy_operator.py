@@ -7,7 +7,7 @@ import time
 import json
 
 
-class LivySparkOperator(BaseOperator):
+class LivyOperator(BaseOperator):
     """
    Operator to facilitate interacting with the Livy Server which executes Apache Spark code via a REST API.
 
@@ -36,7 +36,7 @@ class LivySparkOperator(BaseOperator):
             http_conn_id='http_default',
             poll_interval=30,
             *args, **kwargs):
-        super(LivySparkOperator, self).__init__(*args, **kwargs)
+        super(LivyOperator, self).__init__(*args, **kwargs)
 
         self.spark_script = spark_script
         self.session_kind = session_kind
@@ -46,7 +46,7 @@ class LivySparkOperator(BaseOperator):
         self.http = HttpHook("GET", http_conn_id=self.http_conn_id)
 
     def execute(self, context):
-        logging.info("Executing LivySparkOperator.execute(context)")
+        logging.info("Executing LivyOperator.execute(context)")
 
         logging.info("Validating arguments...")
         self._validate_arguments()
@@ -102,7 +102,7 @@ class LivySparkOperator(BaseOperator):
         response = self._close_session(session_id=session_id)
         logging.info("Finished closing session. (response: " + str(response) + ")")
 
-        logging.info("Finished executing LivySparkOperator.execute(context)")
+        logging.info("Finished executing LivyOperator.execute(context)")
 
     def _validate_arguments(self):
         if self.session_kind is None or self.session_kind == "":
