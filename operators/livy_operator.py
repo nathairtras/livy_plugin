@@ -1,131 +1,10 @@
-# -*- coding: utf-8 -*-
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-# http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
-from airflow.plugins_manager import AirflowPlugin
-from airflow.hooks import HttpHook
 from airflow.models import BaseOperator
-from airflow.operators import BashOperator
+from airflow.hooks.http_hook import HttpHook
 from airflow.utils import apply_defaults
 import logging
 import textwrap
 import time
 import json
-
-
-class SparkSubmitOperator(BashOperator):
-    """
-   An operator which executes the spark-submit command through Airflow. This operator accepts all the desired
-   arguments and assembles the spark-submit command which is then executed by the BashOperator.
-
-   :param application_file: Path to a bundled jar including your application
-        and all dependencies. The URL must be globally visible inside of
-        your cluster, for instance, an hdfs:// path or a file:// path
-        that is present on all nodes.
-   :type application_file: string
-   :param main_class: The entry point for your application
-        (e.g. org.apache.spark.examples.SparkPi)
-   :type main_class: string
-   :param master: The master value for the cluster.
-        (e.g. spark://23.195.26.187:7077 or yarn-client)
-   :type master: string
-   :param conf: Dictionary consisting of arbitrary Spark configuration properties.
-        (e.g. {"spark.eventLog.enabled": "false",
-               "spark.executor.extraJavaOptions": "-XX:+PrintGCDetails -XX:+PrintGCTimeStamps"}
-   :type conf: dict
-   :param deploy_mode: Whether to deploy your driver on the worker nodes
-        (cluster) or locally as an external client (default: client)
-   :type deploy_mode: string
-   :param other_spark_options: Other options you would like to pass to
-        the spark submit command that isn't covered by the current
-        options. (e.g. --files /path/to/file.xml)
-   :type other_spark_options: string
-   :param application_args: Arguments passed to the main method of your
-        main class, if any.
-   :type application_args: string
-   :param xcom_push: If xcom_push is True, the last line written to stdout
-       will also be pushed to an XCom when the bash command completes.
-   :type xcom_push: bool
-   :param env: If env is not None, it must be a mapping that defines the
-       environment variables for the new process; these are used instead
-       of inheriting the current process environment, which is the default
-       behavior. (templated)
-   :type env: dict
-   :type output_encoding: output encoding of bash command
-   """
-
-    template_fields = ('conf', 'other_spark_options', 'application_args', 'env')
-    template_ext = []
-    ui_color = '#e47128'  # Apache Spark's Main Color: Orange
-
-    @apply_defaults
-    def __init__(
-            self,
-            application_file,
-            main_class=None,
-            master=None,
-            conf={},
-            deploy_mode=None,
-            other_spark_options=None,
-            application_args=None,
-            xcom_push=False,
-            env=None,
-            output_encoding='utf-8',
-            *args, **kwargs):
-        self.bash_command = ""
-        self.env = env
-        self.output_encoding = output_encoding
-        self.xcom_push_flag = xcom_push
-        super(SparkSubmitOperator, self).__init__(bash_command=self.bash_command, xcom_push=xcom_push, env=env, output_encoding=output_encoding, *args, **kwargs)
-        self.application_file = application_file
-        self.main_class = main_class
-        self.master = master
-        self.conf = conf
-        self.deploy_mode = deploy_mode
-        self.other_spark_options = other_spark_options
-        self.application_args = application_args
-
-    def execute(self, context):
-        logging.info("Executing SparkSubmitOperator.execute(context)")
-
-        self.bash_command = "spark-submit "
-        if self.is_not_null_and_is_not_empty_str(self.main_class):
-            self.bash_command += "--class " + self.main_class + " "
-        if self.is_not_null_and_is_not_empty_str(self.master):
-            self.bash_command += "--master " + self.master + " "
-        if self.is_not_null_and_is_not_empty_str(self.deploy_mode):
-            self.bash_command += "--deploy-mode " + self.deploy_mode + " "
-        for conf_key, conf_value in self.conf.items():
-            if self.is_not_null_and_is_not_empty_str(conf_key) and self.is_not_null_and_is_not_empty_str(conf_value):                
-                self.bash_command += "--conf " + "'" + conf_key + "=" + conf_value + "'" + " "
-        if self.is_not_null_and_is_not_empty_str(self.other_spark_options):
-            self.bash_command += self.other_spark_options + " "
-
-        self.bash_command += self.application_file + " "
-
-        if self.is_not_null_and_is_not_empty_str(self.application_args):
-            self.bash_command += self.application_args + " "
-
-        logging.info("Finished assembling bash_command in SparkSubmitOperator: " + str(self.bash_command))
-
-        logging.info("Executing bash execute statement")
-        super(SparkSubmitOperator, self).execute(context)
-
-        logging.info("Finished executing SparkSubmitOperator.execute(context)")
-
-    @staticmethod
-    def is_not_null_and_is_not_empty_str(value):
-        return value is not None and value != ""
 
 
 class LivySparkOperator(BaseOperator):
@@ -332,14 +211,3 @@ class LivySparkOperator(BaseOperator):
         logging.debug("response_as_json: " + str(response.json()))
 
         return response
-
-
-# Defining the plugin class
-class SparkOperatorPlugin(AirflowPlugin):
-    name = "spark_operator_plugin"
-    operators = [SparkSubmitOperator, LivySparkOperator]
-    flask_blueprints = []
-    hooks = []
-    executors = []
-    admin_views = []
-    menu_links = []
