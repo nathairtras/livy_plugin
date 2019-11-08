@@ -1,5 +1,5 @@
 from airflow.plugins_manager import AirflowPlugin
-from livy.operators.livy_operator import LivyOperator
+from livy_plugin.operators.livy_operator import LivyOperator
 
 
 class livy_plugin(AirflowPlugin):
