@@ -1,6 +1,6 @@
 # Plugin - Livy
 
-This plugin submits jobs to Spark through REST requests to Livy.
+This plugin submits jobs to Spark through REST requests to the [Livy API](https://livy.incubator.apache.org/examples/).
 
 ## Operators
 ### LivyOperator
